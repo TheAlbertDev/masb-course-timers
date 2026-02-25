@@ -1,0 +1,5 @@
+pytest
+rpi-lgpio
+pytest-timeout
+numpy
+scipy
