@@ -1,0 +1,55 @@
+name: 🧪 Arduino blink LED intensity - PR check
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance_tests:
+    name: ✅ Build and Run Acceptance tests
+    if: |
+      !github.event.repository.is_template &&
+      github.head_ref == 'arduino-blink-led-intensity'
+    runs-on: self-hosted
+    steps:
+      - name: 🛡️ Get GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.THEALBERTDEVBOT_APP_ID }}
+          private-key: ${{ secrets.THEALBERTDEVBOT_SECRET_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🏗️ Build and upload PlatformIO CLI project
+        run: |
+          cd ${{ github.workspace }}/arduino/workspace/blink-led-intensity
+          pio run --target upload
+
+      - name: 🧬 Run unit tests
+        env:
+          CPPUTEST_HOME: /opt/cpputest
+        run: |
+          cd ${{ github.workspace }}/.github/tests/unit/test_blink_led_intensity/arduino
+          make
+
+      - name: 🧬 Run acceptance tests
+        run: |
+          cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_intensity
+          /usr/bin/python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          python -m pytest -v
