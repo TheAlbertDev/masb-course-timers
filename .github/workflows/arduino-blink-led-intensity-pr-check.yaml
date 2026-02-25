@@ -1,4 +1,4 @@
-name: 🧪 Arduino blink LED heartbeat - PR check
+name: 🧪 Arduino blink LED intensity - PR check
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
     name: ✅ Build and Run Acceptance tests
     if: |
       !github.event.repository.is_template &&
-      github.head_ref == 'arduino-blink-led-heartbeat'
+      github.head_ref == 'arduino-blink-led-intensity'
     runs-on: self-hosted
     steps:
       - name: 🛡️ Get GitHub App token
@@ -36,19 +36,19 @@ jobs:
 
       - name: 🏗️ Build and upload PlatformIO CLI project
         run: |
-          cd ${{ github.workspace }}/arduino/workspace/blink-led-heartbeat
+          cd ${{ github.workspace }}/arduino/workspace/blink-led-intensity
           pio run --target upload
 
       # - name: 🧬 Run unit tests
       #   env:
       #     CPPUTEST_HOME: /opt/cpputest
       #   run: |
-      #     cd ${{ github.workspace }}/.github/tests/unit/test_blink_led_heartbeat/arduino
+      #     cd ${{ github.workspace }}/.github/tests/unit/test_blink_led_intensity/arduino
       #     make
 
       - name: 🧬 Run acceptance tests
         run: |
-          cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_heartbeat
+          cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_intensity
           /usr/bin/python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt

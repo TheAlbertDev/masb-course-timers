@@ -36,7 +36,7 @@ jobs:
 
       - name: 🏗️ Build and upload PlatformIO CLI project
         run: |
-          cd ${{ github.workspace }}/arduino/workspace/scheduling
+          cd ${{ github.workspace }}/arduino/workspace/blink-led-hardware
           pio run --target upload
 
       # - name: 🧬 Run unit tests
