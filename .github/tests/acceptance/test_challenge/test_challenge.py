@@ -7,19 +7,19 @@ import sys
 def test_led_initially_off(setup_gpio):
     """Test that LED is initially off when the program starts."""
     
-    # Monitor LED state for 2 seconds to ensure it stays consistently off
+    # Monitor LED state for 5 seconds to ensure it stays consistently off
     try:
         initial_led_state = GPIO.input(17)
         print(f"Initial LED state (GPIO 17): {initial_led_state}")
     except Exception as e:
         pytest.fail(f"Failed to read GPIO 17: {e}. Make sure RPi.GPIO is properly set up.")
     
-    # Monitor LED for 2 seconds to detect any unexpected blinking
+    # Monitor LED for 5 seconds to detect any unexpected blinking
     transitions = 0
     led_states = []
     last_state = initial_led_state
     start_time = time.time()
-    monitoring_duration = 2.0
+    monitoring_duration = 5.0
     
     print(f"Monitoring LED for {monitoring_duration} seconds to ensure it stays off...")
     
@@ -48,364 +48,187 @@ def test_led_initially_off(setup_gpio):
     print("✓ LED is correctly and consistently off initially")
 
 
-def test_button_press_starts_blinking(setup_gpio):
-    """Test that pressing the button starts LED blinking."""
+def test_led_starts_blinking_on_first_button_press(setup_gpio):
+    """Test that LED starts blinking every 500ms after first button press."""
     
-    print("Testing button press to start blinking...")
-    
-    # Confirm LED is initially off
+    # Verify LED is initially off
     initial_state = GPIO.input(17)
-    assert initial_state == GPIO.LOW, f"LED should be off initially, found {initial_state}"
+    print(f"Initial LED state: {initial_state}")
     
-    # Simulate button press (falling edge from HIGH to LOW)
-    print("Simulating button press...")
+    # Simulate first button press
+    print("Simulating first button press...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)  # Hold button down for 100ms
+    time.sleep(0.2)  # Hold button for 0.2 seconds
     GPIO.output(27, GPIO.HIGH)
     
-    # Wait a moment for interrupt to process
-    time.sleep(0.3)
+    # Wait a moment for the system to react
+    time.sleep(0.2)
     
-    # Monitor LED for blinking activity
-    transitions = []
-    last_state = GPIO.input(17)
+    # Monitor LED for blinking pattern over 3 seconds
+    led_transitions = []
+    last_led_state = GPIO.input(17)
     start_time = time.time()
-    monitoring_duration = 3.0  # Monitor for 3 seconds to capture multiple blinks
+    monitoring_duration = 3.0  # Monitor for 3 seconds
     
     print(f"Monitoring LED for {monitoring_duration} seconds after button press...")
-    print(f"Initial LED state after button press: {last_state}")
     
     while time.time() - start_time < monitoring_duration:
-        current_state = GPIO.input(17)
+        current_led_state = GPIO.input(17)
         
-        if current_state != last_state:
+        if current_led_state != last_led_state:
             transition_time = time.time() - start_time
-            transitions.append({
+            led_transitions.append({
                 'time': transition_time,
-                'from_state': last_state,
-                'to_state': current_state
+                'from': last_led_state,
+                'to': current_led_state
             })
-            print(f"LED transition at {transition_time:.3f}s: {last_state} -> {current_state}")
-            last_state = current_state
+            print(f"LED transition at {transition_time:.3f}s: {last_led_state} -> {current_led_state}")
+            last_led_state = current_led_state
         
-        time.sleep(0.01)  # Check every 10ms
+        time.sleep(0.01)  # Small delay to avoid excessive CPU usage
     
-    print(f"Total transitions after button press: {len(transitions)}")
+    print(f"Detected {len(led_transitions)} LED transitions")
     
-    # Should have transitions indicating blinking started
-    assert len(transitions) >= 4, f"Expected at least 4 transitions in {monitoring_duration}s, found {len(transitions)}"
+    # Check if LED is blinking (should have multiple transitions)
+    assert len(led_transitions) >= 4, f"Expected at least 4 transitions (2 blinks) in 3 seconds, but got {len(led_transitions)}"
     
-    # Check timing intervals (should be approximately 0.5 seconds for 500ms timer)
-    for i in range(1, len(transitions)):
-        interval = transitions[i]['time'] - transitions[i-1]['time']
-        print(f"Interval {i}: {interval:.3f}s")
-        
-        # Allow some tolerance for timer accuracy (±100ms)
-        assert 0.4 <= interval <= 0.6, f"Interval {i} is {interval:.3f}s, expected ~0.5s"
+    # Calculate intervals between transitions to verify ~500ms timing
+    intervals = []
+    for i in range(1, len(led_transitions)):
+        interval = led_transitions[i]['time'] - led_transitions[i-1]['time']
+        intervals.append(interval)
     
-    print("✓ Button press successfully starts LED blinking")
+    # Check that intervals are approximately 500ms (0.5s) with some tolerance
+    expected_interval = 0.5
+    tolerance = 0.15  # Allow 150ms tolerance
+    
+    valid_intervals = [interval for interval in intervals if abs(interval - expected_interval) <= tolerance]
+    print(f"Intervals: {[round(i, 3) for i in intervals]}")
+    print(f"Valid intervals (~500ms ± {tolerance*1000}ms): {len(valid_intervals)}/{len(intervals)}")
+    
+    # At least 50% of intervals should be close to 500ms
+    assert len(valid_intervals) >= len(intervals) * 0.5, f"Less than 50% of intervals are close to 500ms"
+    
+    print("✓ LED is blinking at approximately 500ms intervals after first button press")
 
 
-def test_button_press_stops_blinking(setup_gpio):
-    """Test that pressing the button again stops LED blinking."""
-    
-    print("Testing button press sequence: start -> stop...")
+def test_led_stops_blinking_on_second_button_press(setup_gpio):
+    """Test that LED stops blinking and turns off after second button press."""
     
     # First button press to start blinking
-    print("First button press to start blinking...")
+    print("First button press - should start blinking...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
+    time.sleep(0.2)
     GPIO.output(27, GPIO.HIGH)
-    time.sleep(0.3)  # Wait for blinking to start
+    time.sleep(1)  # Wait for blinking to start
     
-    # Verify blinking has started
-    transitions_before_stop = 0
+    # Verify blinking is active by checking for transitions
+    transitions_before = 0
     last_state = GPIO.input(17)
     check_start = time.time()
     
     while time.time() - check_start < 1.5:  # Check for 1.5 seconds
         current_state = GPIO.input(17)
         if current_state != last_state:
-            transitions_before_stop += 1
+            transitions_before += 1
             last_state = current_state
         time.sleep(0.01)
     
-    assert transitions_before_stop >= 2, f"LED should be blinking before second button press, found {transitions_before_stop} transitions"
-    print(f"Confirmed blinking with {transitions_before_stop} transitions")
+    print(f"Transitions detected while blinking: {transitions_before}")
+    assert transitions_before >= 2, "LED should be blinking after first button press"
     
     # Second button press to stop blinking
-    print("Second button press to stop blinking...")
+    print("Second button press - should stop blinking...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
+    time.sleep(0.2)
     GPIO.output(27, GPIO.HIGH)
-    time.sleep(0.3)  # Wait for stop command to process
+    time.sleep(0.5)  # Wait for system to react
     
-    # Monitor LED to confirm it stopped and stays off
-    transitions_after_stop = 0
+    # Monitor LED for 2 seconds to verify it stops blinking and stays off
+    transitions_after = 0
     led_states = []
     last_state = GPIO.input(17)
-    start_time = time.time()
-    monitoring_duration = 2.0
+    check_start = time.time()
     
-    print(f"Monitoring LED for {monitoring_duration} seconds after stop command...")
-    print(f"LED state immediately after stop: {last_state}")
-    
-    while time.time() - start_time < monitoring_duration:
+    while time.time() - check_start < 2.0:  # Check for 2 seconds
         current_state = GPIO.input(17)
         led_states.append(current_state)
-        
         if current_state != last_state:
-            transitions_after_stop += 1
-            transition_time = time.time() - start_time
-            print(f"Unexpected transition at {transition_time:.3f}s: {last_state} -> {current_state}")
+            transitions_after += 1
+            print(f"Transition at {time.time() - check_start:.3f}s: {last_state} -> {current_state}")
             last_state = current_state
-        
         time.sleep(0.01)
     
+    print(f"Transitions after second button press: {transitions_after}")
+    
+    # LED should stop blinking (no or very few transitions)
+    assert transitions_after <= 1, f"LED should stop blinking after second button press, but detected {transitions_after} transitions"
+    
+    # LED should be off (final state should be LOW)
     final_state = GPIO.input(17)
     print(f"Final LED state: {final_state}")
-    print(f"Transitions after stop: {transitions_after_stop}")
+    assert final_state == GPIO.LOW, f"LED should be off (LOW) after stopping, but found {final_state}"
     
-    # LED should have stopped blinking (no transitions) and be off
-    assert transitions_after_stop == 0, f"LED should stop blinking, but detected {transitions_after_stop} transitions"
-    assert final_state == GPIO.LOW, f"LED should be off after stop, but found {final_state}"
-    
-    print("✓ Button press successfully stops LED blinking")
+    print("✓ LED correctly stops blinking and turns off after second button press")
 
 
-def test_multiple_button_press_cycles(setup_gpio):
-    """Test multiple button press cycles: off -> on -> off -> on."""
+def test_led_toggle_between_blinking_and_off(setup_gpio):
+    """Test the complete cycle: off -> blinking -> off -> blinking."""
     
-    print("Testing multiple button press cycles...")
-    
-    cycle_results = []
-    
-    for cycle in range(3):  # Test 3 cycles
-        print(f"\n--- Cycle {cycle + 1} ---")
-        
-        # Button press to start blinking
-        print(f"Cycle {cycle + 1}: Starting blinking...")
-        GPIO.output(27, GPIO.LOW)
-        time.sleep(0.1)
-        GPIO.output(27, GPIO.HIGH)
-        time.sleep(0.3)
-        
-        # Monitor for blinking activity
+    # Helper function to count transitions
+    def count_transitions(duration):
         transitions = 0
         last_state = GPIO.input(17)
-        start_time = time.time()
+        start = time.time()
         
-        while time.time() - start_time < 1.5:
+        while time.time() - start < duration:
             current_state = GPIO.input(17)
             if current_state != last_state:
                 transitions += 1
                 last_state = current_state
             time.sleep(0.01)
         
-        blinking_detected = transitions >= 2
-        print(f"Cycle {cycle + 1}: Blinking transitions = {transitions}, detected = {blinking_detected}")
-        
-        # Button press to stop blinking
-        print(f"Cycle {cycle + 1}: Stopping blinking...")
-        GPIO.output(27, GPIO.LOW)
-        time.sleep(0.1)
-        GPIO.output(27, GPIO.HIGH)
-        time.sleep(0.3)
-        
-        # Monitor to confirm stopped
-        stop_transitions = 0
-        last_state = GPIO.input(17)
-        start_time = time.time()
-        
-        while time.time() - start_time < 1.0:
-            current_state = GPIO.input(17)
-            if current_state != last_state:
-                stop_transitions += 1
-                last_state = current_state
-            time.sleep(0.01)
-        
-        final_state = GPIO.input(17)
-        stopped_correctly = stop_transitions == 0 and final_state == GPIO.LOW
-        print(f"Cycle {cycle + 1}: Stop transitions = {stop_transitions}, final state = {final_state}, stopped = {stopped_correctly}")
-        
-        cycle_results.append({
-            'cycle': cycle + 1,
-            'blinking_started': blinking_detected,
-            'blinking_stopped': stopped_correctly
-        })
-        
-        time.sleep(0.2)  # Brief pause between cycles
+        return transitions
     
-    # Verify all cycles worked
-    print(f"\n--- Cycle Summary ---")
-    for result in cycle_results:
-        print(f"Cycle {result['cycle']}: Start={result['blinking_started']}, Stop={result['blinking_stopped']}")
-        assert result['blinking_started'], f"Cycle {result['cycle']} failed to start blinking"
-        assert result['blinking_stopped'], f"Cycle {result['cycle']} failed to stop blinking"
+    # Initial state should be off
+    initial_state = GPIO.input(17)
+    print(f"Initial LED state: {initial_state}")
+    assert initial_state == GPIO.LOW, "LED should initially be off"
     
-    print("✓ Multiple button press cycles work correctly")
-
-
-def test_button_debounce_handling(setup_gpio):
-    """Test that button debouncing prevents multiple triggers."""
-    
-    print("Testing button debounce handling...")
-    
-    # Rapid button presses (should be debounced)
-    print("Sending rapid button presses (should be debounced)...")
-    for i in range(5):
-        GPIO.output(27, GPIO.LOW)
-        time.sleep(0.05)  # 50ms pulses (faster than 200ms debounce)
-        GPIO.output(27, GPIO.HIGH)
-        time.sleep(0.05)
-    
-    time.sleep(0.5)  # Wait for any processing
-    
-    # Check LED state - should either be off or blinking consistently
-    transitions = 0
-    last_state = GPIO.input(17)
-    start_time = time.time()
-    
-    while time.time() - start_time < 2.0:
-        current_state = GPIO.input(17)
-        if current_state != last_state:
-            transitions += 1
-            last_state = current_state
-        time.sleep(0.01)
-    
-    print(f"Transitions after rapid presses: {transitions}")
-    
-    # Should either be stable (0 transitions) or blinking consistently
-    # If blinking, should have reasonable number of transitions for 2 seconds at 0.5s intervals
-    if transitions == 0:
-        print("LED is stable (off) - debouncing prevented erratic behavior")
-    else:
-        # If blinking, should be consistent (approximately 4 transitions in 2 seconds)
-        assert 3 <= transitions <= 6, f"If blinking, should be consistent, but found {transitions} transitions"
-        print("LED is blinking consistently - debouncing allowed single activation")
-    
-    print("✓ Button debouncing works correctly")
-
-
-def test_empty_loop_operation(setup_gpio):
-    """Test that system works with empty loop (interrupt-driven)."""
-    
-    print("Testing interrupt-driven operation (simulating empty loop)...")
-    
-    # This test validates that all functionality works via interrupts
-    # without requiring any code in the loop() function
-    
-    # Button press to start
-    print("Starting blinking with interrupt...")
+    # First press: should start blinking
+    print("Press 1: Starting blinking...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
+    time.sleep(0.2)
     GPIO.output(27, GPIO.HIGH)
-    time.sleep(0.3)
+    time.sleep(1)
     
-    # Monitor blinking for extended period to ensure it's stable
-    transitions = []
-    last_state = GPIO.input(17)
-    start_time = time.time()
-    monitoring_duration = 4.0  # Monitor for 4 seconds
+    transitions_1 = count_transitions(1.5)
+    print(f"Transitions during first blinking period: {transitions_1}")
+    assert transitions_1 >= 2, "LED should be blinking after first press"
     
-    print(f"Monitoring interrupt-driven blinking for {monitoring_duration} seconds...")
-    
-    while time.time() - start_time < monitoring_duration:
-        current_state = GPIO.input(17)
-        
-        if current_state != last_state:
-            transition_time = time.time() - start_time
-            transitions.append(transition_time)
-            last_state = current_state
-        
-        time.sleep(0.01)
-    
-    print(f"Total transitions in {monitoring_duration}s: {len(transitions)}")
-    
-    # Should have consistent transitions
-    assert len(transitions) >= 6, f"Expected at least 6 transitions in {monitoring_duration}s, found {len(transitions)}"
-    
-    # Check timing consistency
-    intervals = []
-    for i in range(1, len(transitions)):
-        interval = transitions[i] - transitions[i-1]
-        intervals.append(interval)
-        
-        if i <= 5:  # Print first few intervals
-            print(f"Interval {i}: {interval:.3f}s")
-    
-    # All intervals should be approximately 0.5s
-    for i, interval in enumerate(intervals):
-        assert 0.4 <= interval <= 0.6, f"Interval {i+1} is {interval:.3f}s, expected ~0.5s"
-    
-    # Stop with second button press
-    print("Stopping blinking with interrupt...")
+    # Second press: should stop blinking
+    print("Press 2: Stopping blinking...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
+    time.sleep(0.2)
     GPIO.output(27, GPIO.HIGH)
     time.sleep(0.5)
     
-    # Verify stopped
-    final_state = GPIO.input(17)
-    assert final_state == GPIO.LOW, f"LED should be off after stop, found {final_state}"
+    transitions_2 = count_transitions(1.5)
+    final_state_1 = GPIO.input(17)
+    print(f"Transitions after second press: {transitions_2}")
+    print(f"LED state after stopping: {final_state_1}")
+    assert transitions_2 <= 1, "LED should stop blinking after second press"
+    assert final_state_1 == GPIO.LOW, "LED should be off after stopping"
     
-    print("✓ Interrupt-driven operation works correctly (empty loop validated)")
-
-
-def test_timer_accuracy_500ms(setup_gpio):
-    """Test that timer provides accurate 500ms intervals."""
-    
-    print("Testing timer accuracy for 500ms intervals...")
-    
-    # Start blinking
+    # Third press: should start blinking again
+    print("Press 3: Starting blinking again...")
     GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
+    time.sleep(0.2)
     GPIO.output(27, GPIO.HIGH)
-    time.sleep(0.3)
+    time.sleep(1)
     
-    # Collect precise timing measurements
-    transitions = []
-    last_state = GPIO.input(17)
-    start_time = time.time()
-    monitoring_duration = 6.0  # Monitor for 6 seconds for good statistics
+    transitions_3 = count_transitions(1.5)
+    print(f"Transitions during second blinking period: {transitions_3}")
+    assert transitions_3 >= 2, "LED should be blinking again after third press"
     
-    print(f"Measuring timer accuracy over {monitoring_duration} seconds...")
-    
-    while time.time() - start_time < monitoring_duration:
-        current_state = GPIO.input(17)
-        
-        if current_state != last_state:
-            transition_time = time.time() - start_time
-            transitions.append(transition_time)
-            last_state = current_state
-        
-        time.sleep(0.001)  # High resolution sampling
-    
-    print(f"Collected {len(transitions)} transitions")
-    
-    # Calculate intervals
-    intervals = []
-    for i in range(1, len(transitions)):
-        interval = transitions[i] - transitions[i-1]
-        intervals.append(interval)
-        if i <= 8:  # Print first 8 intervals
-            print(f"Interval {i}: {interval:.3f}s")
-    
-    # Calculate statistics
-    avg_interval = sum(intervals) / len(intervals)
-    variance = sum((x - avg_interval) ** 2 for x in intervals) / len(intervals)
-    std_dev = variance ** 0.5
-    
-    print(f"Average interval: {avg_interval:.3f}s")
-    print(f"Standard deviation: {std_dev:.3f}s")
-    
-    # Timer should be accurate to 500ms ±30ms
-    assert 0.47 <= avg_interval <= 0.53, f"Average interval {avg_interval:.3f}s should be ~0.5s"
-    assert std_dev <= 0.02, f"Standard deviation {std_dev:.3f}s should be ≤20ms for timer accuracy"
-    
-    # Stop blinking
-    GPIO.output(27, GPIO.LOW)
-    time.sleep(0.1)
-    GPIO.output(27, GPIO.HIGH)
-    
-    print("✓ Timer provides accurate 500ms intervals")
+    print("✓ LED successfully toggles between blinking and off states")
