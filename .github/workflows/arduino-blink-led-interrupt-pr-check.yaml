@@ -48,7 +48,7 @@ jobs:
 
       - name: 🧬 Run acceptance tests
         run: |
-          cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_interrupt
+          cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_toggle
           /usr/bin/python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt

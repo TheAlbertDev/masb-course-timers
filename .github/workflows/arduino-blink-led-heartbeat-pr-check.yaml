@@ -47,9 +47,19 @@ jobs:
       #     make
 
       - name: 🧬 Run acceptance tests
+        id: acceptance-tests
         run: |
           cd ${{ github.workspace }}/.github/tests/acceptance/test_blink_led_heartbeat
           /usr/bin/python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
           python -m pytest -v
+
+      - name: Upload charts as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heartbeat-analysis-charts
+          path: artifacts/*.png
+          if-no-files-found: warn
+          retention-days: 30
