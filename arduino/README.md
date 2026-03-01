@@ -265,7 +265,7 @@ Let's move on to the next section, where we'll see how to vary the LED intensity
 
 We can control the intensity of an LED using a PWM signal. A [PWM signal](https://en.wikipedia.org/wiki/Pulse-width_modulation) is simply a periodic rectangular signal whose ratio between the time the signal is high and the period, called _duty cycle_, is configurable. **The LED will shine brighter with a PWM with a high _duty cycle_ and dimmer with a low _duty cycle_.**
 
-Let's set a fixed intensity for the LED using PWM. Create a branch called `blink-led-intensity` from the `main` branch, and create a project named `blink-led-intensity`.
+Let's set a fixed intensity for the LED using PWM. Create a branch called `arduino-blink-led-intensity` from the `main` branch, and create a project named `blink-led-intensity`.
 
 Since we'll configure a _timer_ channel for this, we'll use the _timer_ that connects to the LED pin: _timer_ 2.
 
