@@ -34,7 +34,9 @@ def test_led_blinking_1_second_interval(setup_gpio):
     print(f"Final LED state: {final_state}")
     print(f"Total transitions: {len(transitions)}")
 
-    expected_transitions = int(monitoring_duration / expected_interval) * 2  # Each cycle has 2 transitions (ON and OFF)
+    # expected_interval is the duration for ON and OFF states individually
+    # Transitions happen every expected_interval seconds
+    expected_transitions = int(monitoring_duration / expected_interval)
 
     assert len(transitions) >= expected_transitions, f"Expected at least {expected_transitions} transitions in {monitoring_duration}s, found {len(transitions)}"
     
