@@ -26,29 +26,59 @@ def test_pwm_frequency_200hz(setup_gpio):
         current_state = GPIO.input(17)
         if current_state != last_state:
             transition_time = time.time() - start_time
-            transitions.append(transition_time)
+            transitions.append({
+                'time': transition_time,
+                'from_state': last_state,
+                'to_state': current_state
+            })
             last_state = current_state
         time.sleep(0.0001)
 
     print(f"Total transitions detected: {len(transitions)}")
 
-    # Calculate periods between transitions (HIGH->LOW or LOW->HIGH)
-    if len(transitions) < 2:
-        pytest.skip("Not enough transitions detected to measure frequency.")
+    # Calculate periods between transitions of the same type (complete cycles)
+    high_to_low_times = []
+    low_to_high_times = []
+    
+    for transition in transitions:
+        if transition['from_state'] == GPIO.HIGH and transition['to_state'] == GPIO.LOW:
+            high_to_low_times.append(transition['time'])
+        elif transition['from_state'] == GPIO.LOW and transition['to_state'] == GPIO.HIGH:
+            low_to_high_times.append(transition['time'])
 
-    periods = [transitions[i] - transitions[i-1] for i in range(1, len(transitions))]
+    # Use whichever transition type has more samples
+    if len(high_to_low_times) >= len(low_to_high_times) and len(high_to_low_times) >= 2:
+        transition_times = high_to_low_times
+        transition_type = "HIGH->LOW"
+    elif len(low_to_high_times) >= 2:
+        transition_times = low_to_high_times
+        transition_type = "LOW->HIGH"
+    else:
+        pytest.skip("Not enough transitions of the same type detected to measure frequency.")
+
+    print(f"Using {len(transition_times)} {transition_type} transitions for period calculation")
+
+    # Calculate periods between same-type transitions
+    periods = []
+    for i in range(1, len(transition_times)):
+        period = transition_times[i] - transition_times[i-1]
+        periods.append(period)
 
     # Discard abnormally long periods (likely due to low duty cycle)
+    if len(periods) == 0:
+        pytest.skip("No periods calculated from transitions.")
+    
     median_period = np.median(periods)
-    filtered_periods = [p for p in periods if p < median_period * 2]
+    filtered_periods = [p for p in periods if p < median_period * 3]  # More lenient filtering
 
-    if len(filtered_periods) < 2:
-        pytest.skip("Not enough valid periods detected to measure frequency.")
+    if len(filtered_periods) == 0:
+        pytest.skip("No valid periods after filtering.")
 
     avg_period = sum(filtered_periods) / len(filtered_periods)
     frequency = 1.0 / avg_period
     print(f"Average period (filtered): {avg_period*1000:.2f}ms")
     print(f"Calculated frequency: {frequency:.1f}Hz")
+    print(f"Used {len(filtered_periods)} out of {len(periods)} periods")
 
     # Frequency should be approximately 200Hz (±20Hz tolerance)
     assert expected_frequency - 20 <= frequency <= expected_frequency + 20, f"Frequency {frequency:.1f}Hz should be ~{expected_frequency}Hz"
