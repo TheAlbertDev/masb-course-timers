@@ -107,6 +107,15 @@ HAL_StatusTypeDef HAL_TIM_PWM_Stop(TIM_HandleTypeDef *htim, uint32_t Channel)
         ->returnIntValueOrDefault(0);
 }
 
+HAL_StatusTypeDef HAL_TIM_OC_Stop(TIM_HandleTypeDef *htim, uint32_t Channel)
+{
+    return (HAL_StatusTypeDef)mock_c()
+        ->actualCall("HAL_TIM_OC_Stop")
+        ->withPointerParameters("htim", htim)
+        ->withUnsignedIntParameters("Channel", Channel)
+        ->returnIntValueOrDefault(0);
+}
+
 void SPY_setCurrentTicks(uint32_t ticks)
 {
     currentTicks = ticks;
