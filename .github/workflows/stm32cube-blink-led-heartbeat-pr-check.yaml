@@ -1,4 +1,4 @@
-name: 🧪 STM32Cube blink LED hardware - PR check
+name: 🧪 STM32Cube blink LED heartbeat - PR check
 
 on:
   pull_request:

@@ -322,11 +322,10 @@ The code would look like this:
 #define LED 13
 
 // constants that define our sinusoidal signal
-const double pi = 3.14, // constant pi
-    amplitude = 25.0 / 2.0, // amplitude of oscillation
-    period = 2;         // period of oscillation
+const float amplitude = 25.0 / 2.0, // amplitude of oscillation
+    period = 2.0;       // period of oscillation
 
-double duty = 0;
+float duty = 0.0;
 
 // create a pointer to the configuration of timer 2 in memory
 // declare it globally so that it is available in the loop function
@@ -343,7 +342,7 @@ void loop()
   // put your main code here, to run repeatedly:
 
   // calculate the pwm duty from a sinusoidal signal
-  duty = amplitude * sin(2 * pi / period * millis() / 1000) + amplitude;
+  duty = amplitude * sin(2.0 * M_PI / period * (float)millis() / 1000.0) + amplitude;
 
   // apply the duty to the pwm
   MyTim->setPWM(1, LED, 200, duty);

@@ -208,12 +208,11 @@ extern TIM_HandleTypeDef htim2;
 void setup(void) { HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1); }
 
 void loop(void) {
-  const float pi = 3.14159265359,     // constant pi
-      amplitude = 25.0 / 2.0,         // oscillation amplitude
+  const float amplitude = 25.0 / 2.0, // oscillation amplitude
       period = 2.0;                   // oscillation period
   const uint32_t TIM2Period = 420000; // TIM2 period
   float duty =
-      amplitude * sin(2.0 * pi / period * HAL_GetTick() / 1000.0) + amplitude;
+      amplitude * sin(2.0 * M_PI / period * (float)HAL_GetTick() / 1000.0) + amplitude;
   uint32_t varPulse = TIM2Period * duty / 100.0;
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, varPulse);
 }

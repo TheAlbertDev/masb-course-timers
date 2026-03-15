@@ -48,12 +48,11 @@ TEST(BlinkLedHeartbeat, Sinusoidal_PWM_Calculation)
     mock().expectOneCall("HAL_GetTick");
 
     // Calculate expected values
-    const float pi = 3.14;
     const float amplitude = 25.0 / 2.0;
     const float period = 2.0;
     const uint32_t TIM2Period = 420000;
 
-    float expected_duty = amplitude * sin(2.0 * pi / period * 1000 / 1000.0) + amplitude;
+    float expected_duty = amplitude * sin(2.0 * M_PI / period * 1000.0 / 1000.0) + amplitude;
     uint32_t expected_pulse = TIM2Period * expected_duty / 100.0;
 
     // Expect __HAL_TIM_SET_COMPARE call with calculated value
@@ -76,12 +75,11 @@ TEST(BlinkLedHeartbeat, PWM_Value_Range)
     SPY_setCurrentTicks(0);
     mock().expectOneCall("HAL_GetTick");
 
-    const float pi = 3.14;
     const float amplitude = 25.0 / 2.0;
     const float period = 2.0;
     const uint32_t TIM2Period = 420000;
 
-    float expected_duty_t0 = amplitude * sin(2.0 * pi / period * 0 / 1000.0) + amplitude;
+    float expected_duty_t0 = amplitude * sin(2.0 * M_PI / period * 0.0 / 1000.0) + amplitude;
     uint32_t expected_pulse_t0 = TIM2Period * expected_duty_t0 / 100.0;
 
     mock()
@@ -96,7 +94,7 @@ TEST(BlinkLedHeartbeat, PWM_Value_Range)
     SPY_setCurrentTicks(500);
     mock().expectOneCall("HAL_GetTick");
 
-    float expected_duty_t500 = amplitude * sin(2.0 * pi / period * 500 / 1000.0) + amplitude;
+    float expected_duty_t500 = amplitude * sin(2.0 * M_PI / period * 500.0 / 1000.0) + amplitude;
     uint32_t expected_pulse_t500 = TIM2Period * expected_duty_t500 / 100.0;
 
     mock()
