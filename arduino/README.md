@@ -344,7 +344,7 @@ void loop()
   // put your main code here, to run repeatedly:
 
   // calculate the pwm duty from a sinusoidal signal
-  duty = amplitude * sin(2.0 * M_PI / period * (float)millis() / 1000.0) + amplitude;
+  duty = amplitude * sinf(2.0 * M_PI / period * (float)millis() / 1000.0) + amplitude;
 
   // apply the duty to the pwm
   MyTim->setPWM(1, LED, 200, duty);

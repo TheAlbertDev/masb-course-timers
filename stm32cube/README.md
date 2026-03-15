@@ -197,7 +197,7 @@ void loop(void) {}
 
 Build and debug the program, and see how **the LED shines with a slight intensity**. We can edit the microcontroller configuration to change the `Pulse` field value to see how the LED intensity varies (I recommend doing it), but let's do it with a sine wave as in the Arduino case.
 
-As in Arduino, let's go to `app.c` and include the standard `math.h` library. **Create the constants** `pi`, `amplitude`, and `period`, and the variable `duty`. Since the value of **`Pulse` is an absolute integer and not a percentage**, **create the constant** `TIM2Period` to store the _timer_ period, and the **variable** `varPulse` to calculate the `Pulse` value based on the calculated _duty_. Since they should not be accessible in any function beyond `loop`, **there is no need to declare them as global constants/variables**. **Calculate the _duty_ with the `sin` function**, calculate the **value for `Pulse` based on the calculated _duty_**, and **use the `__HAL_TIM_SET_COMPARE` macro** from the HAL to modify the `Pulse` value of _timer_ 2.
+As in Arduino, let's go to `app.c` and include the standard `math.h` library. **Create the constants** `pi`, `amplitude`, and `period`, and the variable `duty`. Since the value of **`Pulse` is an absolute integer and not a percentage**, **create the constant** `TIM2Period` to store the _timer_ period, and the **variable** `varPulse` to calculate the `Pulse` value based on the calculated _duty_. Since they should not be accessible in any function beyond `loop`, **there is no need to declare them as global constants/variables**. **Calculate the _duty_ with the `sinf` function**, calculate the **value for `Pulse` based on the calculated _duty_**, and **use the `__HAL_TIM_SET_COMPARE` macro** from the HAL to modify the `Pulse` value of _timer_ 2.
 
 ```c
 #include "main.h"
@@ -212,7 +212,7 @@ void loop(void) {
       period = 2.0;                   // oscillation period
   const uint32_t TIM2Period = 420000; // TIM2 period
   float duty =
-      amplitude * sin(2.0 * M_PI / period * (float)HAL_GetTick() / 1000.0) + amplitude;
+      amplitude * sinf(2.0 * M_PI / period * (float)HAL_GetTick() / 1000.0) + amplitude;
   uint32_t varPulse = TIM2Period * duty / 100.0;
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, varPulse);
 }

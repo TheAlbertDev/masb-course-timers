@@ -33,15 +33,14 @@ TEST_GROUP(BlinkLedHeartbeat) // clang-format off
 TEST(BlinkLedHeartbeat, Sinusoidal_PWM_Generation)
 {
     // Constants from the implementation
-    const double pi = 3.14;
-    const double amplitude = 25.0 / 2.0; // 12.5
-    const double period = 2.0;
+    const float amplitude = 25.0f / 2.0f; // 12.5
+    const float period = 2.0f;
 
     // Mock millis to return a specific time value
     mock().expectOneCall("millis").andReturnValue(1000); // 1 second
 
     // Calculate expected duty cycle at t=1s
-    double expected_duty = amplitude * sin(2 * pi / period * 1000 / 1000) + amplitude;
+    float expected_duty = amplitude * sinf(2.0f * M_PI / period * 1000.0f / 1000.0f) + amplitude;
 
     mock().expectOneCall("HardwareTimer::setPWM").withParameter("channel", 1).withParameter("pin", 13).withParameter("frequency", 200).withParameter("duty", expected_duty);
 
@@ -53,13 +52,12 @@ TEST(BlinkLedHeartbeat, Sinusoidal_PWM_Generation)
 TEST(BlinkLedHeartbeat, Duty_Cycle_At_Different_Times)
 {
     // Constants from the implementation
-    const double pi = 3.14;
-    const double amplitude = 25.0 / 2.0; // 12.5
-    const double period = 2.0;
+    const float amplitude = 25.0f / 2.0f; // 12.5
+    const float period = 2.0f;
 
     // Test at t=0s: sin(0) = 0, so duty = amplitude + amplitude = 2*amplitude
     mock().expectOneCall("millis").andReturnValue(0);
-    double expected_duty_0ms = amplitude * sin(2 * pi / period * 0 / 1000) + amplitude;
+    float expected_duty_0ms = amplitude * sinf(2.0f * M_PI / period * 0.0f / 1000.0f) + amplitude;
 
     mock().expectOneCall("HardwareTimer::setPWM").withParameter("channel", 1).withParameter("pin", 13).withParameter("frequency", 200).withParameter("duty", expected_duty_0ms);
 
@@ -67,14 +65,14 @@ TEST(BlinkLedHeartbeat, Duty_Cycle_At_Different_Times)
 
     // Test at t=0.5s: sin(pi) = 0, so duty = amplitude
     mock().expectOneCall("millis").andReturnValue(500); // 0.5 seconds
-    double expected_duty_500ms = amplitude * sin(2 * pi / period * 500 / 1000) + amplitude;
+    float expected_duty_500ms = amplitude * sinf(2.0f * M_PI / period * 500.0f / 1000.0f) + amplitude;
     mock().expectOneCall("HardwareTimer::setPWM").withParameter("channel", 1).withParameter("pin", 13).withParameter("frequency", 200).withParameter("duty", expected_duty_500ms);
 
     ::loop();
 
     // Test at t=1s: sin(2pi) = 0, so duty = amplitude
     mock().expectOneCall("millis").andReturnValue(1000); // 1 second
-    double expected_duty_1000ms = amplitude * sin(2 * pi / period * 1000 / 1000) + amplitude;
+    float expected_duty_1000ms = amplitude * sinf(2.0f * M_PI / period * 1000.0f / 1000.0f) + amplitude;
     mock().expectOneCall("HardwareTimer::setPWM").withParameter("channel", 1).withParameter("pin", 13).withParameter("frequency", 200).withParameter("duty", expected_duty_1000ms);
 
     ::loop();
