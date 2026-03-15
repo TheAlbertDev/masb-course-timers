@@ -272,6 +272,8 @@ Let's set a fixed intensity for the LED using PWM. Create a branch called `ardui
 Since we'll configure a _timer_ channel for this, we'll use the _timer_ that connects to the LED pin: _timer_ 2.
 
 ```c++
+#include <Arduino.h>
+
 #define LED     13
 
 void setup() {
